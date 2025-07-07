@@ -30,6 +30,7 @@ ping = "0.4"
 run_script = "0.10"
 http_req = { version = "0.9", features = ["rust-tls"], default-features = false }
 base64 = "0.21"
+nu-ansi-term = "0.50.1"
 
 [profile.dev]
 opt-level = 0
