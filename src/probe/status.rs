@@ -6,17 +6,17 @@
 
 #[derive(Debug, PartialEq)]
 pub enum Status {
-    Healthy,
-    Sick,
-    Dead,
+  Healthy,
+  Sick,
+  Dead,
 }
 
 impl Status {
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            &Status::Healthy => "healthy",
-            &Status::Sick => "sick",
-            &Status::Dead => "dead",
-        }
+  pub fn as_str(&self) -> &'static str {
+    match self {
+      &Status::Healthy => "healthy",
+      &Status::Sick => "sick",
+      &Status::Dead => "dead",
     }
+  }
 }

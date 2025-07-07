@@ -10,110 +10,110 @@ use crate::probe::replica::ReplicaURL;
 
 #[derive(Deserialize)]
 pub struct Config {
-    pub server: ConfigServer,
-    pub report: ConfigReport,
-    pub metrics: ConfigMetrics,
-    pub probe: ConfigProbe,
+  pub server: ConfigServer,
+  pub report: ConfigReport,
+  pub metrics: ConfigMetrics,
+  pub probe: ConfigProbe,
 }
 
 #[derive(Deserialize)]
 pub struct ConfigServer {
-    #[serde(default = "defaults::server_log_level")]
-    pub log_level: String,
+  #[serde(default = "defaults::server_log_level")]
+  pub log_level: String,
 }
 
 #[derive(Deserialize)]
 pub struct ConfigReport {
-    pub endpoint: String,
-    pub token: String,
+  pub endpoint: String,
+  pub token: String,
 }
 
 #[derive(Deserialize)]
 pub struct ConfigMetrics {
-    #[serde(default = "defaults::metrics_interval")]
-    pub interval: u64,
+  #[serde(default = "defaults::metrics_interval")]
+  pub interval: u64,
 
-    #[serde(default = "defaults::metrics_poll_retry")]
-    pub poll_retry: u8,
+  #[serde(default = "defaults::metrics_poll_retry")]
+  pub poll_retry: u8,
 
-    #[serde(default = "defaults::metrics_poll_delay_dead")]
-    pub poll_delay_dead: u64,
+  #[serde(default = "defaults::metrics_poll_delay_dead")]
+  pub poll_delay_dead: u64,
 
-    #[serde(default = "defaults::metrics_poll_delay_sick")]
-    pub poll_delay_sick: u64,
+  #[serde(default = "defaults::metrics_poll_delay_sick")]
+  pub poll_delay_sick: u64,
 }
 
 #[derive(Deserialize)]
 pub struct ConfigProbe {
-    pub service: Vec<ConfigProbeService>,
+  pub service: Vec<ConfigProbeService>,
 }
 
 #[derive(Deserialize)]
 pub struct ConfigProbeService {
-    pub id: String,
-    pub node: Vec<ConfigProbeServiceNode>,
+  pub id: String,
+  pub node: Vec<ConfigProbeServiceNode>,
 }
 
 #[derive(Deserialize, Default)]
 pub enum HttpMethod {
-    #[default]
-    GET,
-    HEAD,
-    POST,
-    PUT,
-    PATCH,
+  #[default]
+  GET,
+  HEAD,
+  POST,
+  PUT,
+  PATCH,
 }
 
 #[derive(Deserialize)]
 pub struct ConfigProbeServiceNode {
-    pub id: String,
-    pub mode: Mode,
-    pub replicas: Option<Vec<ConfigProbeServiceReplicaNode>>,
-    pub scripts: Option<Vec<ConfigProbeServiceScriptNode>>,
-    pub http_method: Option<HttpMethod>,
+  pub id: String,
+  pub mode: Mode,
+  pub replicas: Option<Vec<ConfigProbeServiceReplicaNode>>,
+  pub scripts: Option<Vec<ConfigProbeServiceScriptNode>>,
+  pub http_method: Option<HttpMethod>,
 }
 
 #[derive(Deserialize, Debug)]
 #[serde(untagged)]
 pub enum ConfigProbeServiceReplicaNode {
-    Extended { url: ReplicaURL, label: String },
-    Simple(ReplicaURL),
+  Extended { url: ReplicaURL, label: String },
+  Simple(ReplicaURL),
 }
 
 #[derive(Deserialize, Debug)]
 #[serde(untagged)]
 pub enum ConfigProbeServiceScriptNode {
-    Extended { script: String, label: String },
-    Simple(String),
+  Extended { script: String, label: String },
+  Simple(String),
 }
 
 impl ConfigProbeServiceReplicaNode {
-    pub fn url(&self) -> &ReplicaURL {
-        match self {
-            Self::Extended { url, .. } => url,
-            Self::Simple(replica_url) => replica_url,
-        }
+  pub fn url(&self) -> &ReplicaURL {
+    match self {
+      Self::Extended { url, .. } => url,
+      Self::Simple(replica_url) => replica_url,
     }
-    pub fn label<'a>(&'a self) -> Option<&'a str> {
-        match self {
-            Self::Extended { label, .. } => Some(label),
-            _ => None,
-        }
+  }
+  pub fn label<'a>(&'a self) -> Option<&'a str> {
+    match self {
+      Self::Extended { label, .. } => Some(label),
+      _ => None,
     }
+  }
 }
 
 impl ConfigProbeServiceScriptNode {
-    pub fn script_content(&self) -> &str {
-        match self {
-            Self::Extended { script, .. } => script,
-            Self::Simple(script) => script,
-        }
+  pub fn script_content(&self) -> &str {
+    match self {
+      Self::Extended { script, .. } => script,
+      Self::Simple(script) => script,
     }
+  }
 
-    pub fn label<'a>(&'a self) -> Option<&'a str> {
-        match self {
-            Self::Extended { label, .. } => Some(label),
-            _ => None,
-        }
+  pub fn label<'a>(&'a self) -> Option<&'a str> {
+    match self {
+      Self::Extended { label, .. } => Some(label),
+      _ => None,
     }
+  }
 }

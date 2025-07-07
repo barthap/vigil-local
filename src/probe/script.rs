@@ -11,75 +11,75 @@ use super::status::Status;
 use crate::config::config::{ConfigProbeService, ConfigProbeServiceNode};
 
 pub fn dispatch(service: &ConfigProbeService, node: &ConfigProbeServiceNode, interval: u64) {
-    if let Some(ref scripts) = node.scripts {
-        if !scripts.is_empty() {
-            debug!("script node has scripts in service node: #{}", node.id);
+  if let Some(ref scripts) = node.scripts {
+    if !scripts.is_empty() {
+      debug!("script node has scripts in service node: #{}", node.id);
 
-            for (index, script) in scripts.iter().enumerate() {
-                let replica_id = index.to_string();
-                let replica_status =
-                    proceed_replica(&service.id, &node.id, &replica_id, script.script_content());
+      for (index, script) in scripts.iter().enumerate() {
+        let replica_id = index.to_string();
+        let replica_status =
+          proceed_replica(&service.id, &node.id, &replica_id, script.script_content());
 
-                debug!("got replica status upon script: {:?}", replica_status);
+        debug!("got replica status upon script: {:?}", replica_status);
 
-                match report_status(
-                    service,
-                    node,
-                    ReportReplica::new_script(&replica_id, script),
-                    &replica_status,
-                    interval,
-                ) {
-                    Ok(_) => info!("reported script replica status: {:?}", replica_status),
-                    Err(_) => error!(
-                        "failed reporting script replica status: {:?}",
-                        replica_status
-                    ),
-                }
-            }
-
-            return;
+        match report_status(
+          service,
+          node,
+          ReportReplica::new_script(&replica_id, script),
+          &replica_status,
+          interval,
+        ) {
+          Ok(_) => info!("reported script replica status: {:?}", replica_status),
+          Err(_) => error!(
+            "failed reporting script replica status: {:?}",
+            replica_status
+          ),
         }
-    }
+      }
 
-    warn!(
-        "script node has no usable script in service node: #{}",
-        node.id
-    );
+      return;
+    }
+  }
+
+  warn!(
+    "script node has no usable script in service node: #{}",
+    node.id
+  );
 }
 
 pub fn proceed_replica(service_id: &str, node_id: &str, replica_id: &str, script: &str) -> Status {
-    info!(
-        "executing script replica on #{}:#{}:[#{}]",
-        service_id, node_id, replica_id
-    );
+  info!(
+    "executing script replica on #{}:#{}:[#{}]",
+    service_id, node_id, replica_id
+  );
 
-    match run_script::run(script, &Vec::new(), &ScriptOptions::new()) {
-        Ok((code, _, _)) => {
-            // Return code '0' goes for 'healthy', '1' goes for 'sick'; any other code is 'dead'
-            let replica_status = match code {
-                0 => Status::Healthy,
-                1 => Status::Sick,
-                _ => Status::Dead,
-            };
+  match run_script::run(script, &Vec::new(), &ScriptOptions::new()) {
+    Ok((code, _, _)) => {
+      // Return code '0' goes for 'healthy', '1' goes for 'sick'; any other code is 'dead'
+      let replica_status = match code {
+        0 => Status::Healthy,
+        1 => Status::Sick,
+        _ => Status::Dead,
+      };
 
-            if replica_status == Status::Dead {
-                warn!(
-                    "script replica execution succeeded with {:?} return code: {}",
-                    replica_status, code
-                );
-            } else {
-                debug!(
-                    "script replica execution succeeded with {:?} return code: {}",
-                    replica_status, code
-                );
-            }
+      if replica_status == Status::Dead {
+        warn!(
+          "script replica execution succeeded with {:?} return code: {}",
+          replica_status, code
+        );
+      } else {
+        debug!(
+          "script replica execution succeeded with {:?} return code: {}",
+          replica_status, code
+        );
+      }
 
-            replica_status
-        }
-        Err(err) => {
-            error!("script replica execution failed with error: {}", err);
-
-            Status::Dead
-        }
+      replica_status
     }
+    Err(err) => {
+      error!("script replica execution failed with error: {}", err);
+
+      Status::Dead
+    }
+  }
 }

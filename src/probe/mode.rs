@@ -6,9 +6,9 @@
 
 #[derive(Deserialize)]
 pub enum Mode {
-    #[serde(rename = "poll")]
-    Poll,
+  #[serde(rename = "poll")]
+  Poll,
 
-    #[serde(rename = "script")]
-    Script,
+  #[serde(rename = "script")]
+  Script,
 }
