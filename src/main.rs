@@ -22,16 +22,16 @@ use std::time::Duration;
 use clap::{Arg, Command};
 use log::LevelFilter;
 
-use config::config::Config;
 use config::logger::ConfigLogger;
 use config::reader::ConfigReader;
+use config::schema::Config;
 use probe::manager::run as run_probe;
 
 struct AppArgs {
   config: String,
 }
 
-pub static THREAD_NAME_PROBE: &'static str = "vigil-local-probe";
+pub static THREAD_NAME_PROBE: &str = "vigil-local-probe";
 
 lazy_static! {
   static ref APP_ARGS: AppArgs = make_app_args();
@@ -81,7 +81,7 @@ fn spawn_probe() {
   };
 
   // Worker thread crashed?
-  if has_error == true {
+  if has_error {
     error!("managed thread crashed (probe), setting it up again");
 
     // Prevents thread start loop floods

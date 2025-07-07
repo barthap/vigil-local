@@ -8,7 +8,7 @@ use run_script::{self, ScriptOptions};
 
 use super::report::{status as report_status, ReportReplica};
 use super::status::Status;
-use crate::config::config::{ConfigProbeService, ConfigProbeServiceNode};
+use crate::config::schema::{ConfigProbeService, ConfigProbeServiceNode};
 
 pub fn dispatch(service: &ConfigProbeService, node: &ConfigProbeServiceNode, interval: u64) {
   if let Some(ref scripts) = node.scripts {

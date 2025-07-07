@@ -9,7 +9,7 @@ use std::{collections::HashMap, env, fs};
 use envsubst::substitute;
 use toml;
 
-use super::config::*;
+use super::schema::*;
 use crate::APP_ARGS;
 
 pub struct ConfigReader;

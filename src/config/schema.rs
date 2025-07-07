@@ -55,13 +55,14 @@ pub struct ConfigProbeService {
 }
 
 #[derive(Deserialize, Default)]
+#[serde(rename_all = "UPPERCASE")]
 pub enum HttpMethod {
   #[default]
-  GET,
-  HEAD,
-  POST,
-  PUT,
-  PATCH,
+  Get,
+  Head,
+  Post,
+  Put,
+  Patch,
 }
 
 #[derive(Deserialize)]
@@ -109,7 +110,8 @@ impl ConfigProbeServiceReplicaNode {
       Self::Simple(replica_url) => replica_url,
     }
   }
-  pub fn label<'a>(&'a self) -> Option<&'a str> {
+
+  pub fn label(&self) -> Option<&str> {
     match self {
       Self::Extended { label, .. } => Some(label),
       _ => None,
@@ -132,7 +134,7 @@ impl ConfigProbeServiceScriptNode {
     }
   }
 
-  pub fn label<'a>(&'a self) -> Option<&'a str> {
+  pub fn label(&self) -> Option<&str> {
     match self {
       Self::Extended { label, .. } => Some(label),
       _ => None,

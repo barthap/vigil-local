@@ -18,7 +18,7 @@ use std::thread;
 use std::time::Duration;
 
 use super::status::Status;
-use crate::config::config::{
+use crate::config::schema::{
   ConfigProbeService, ConfigProbeServiceNode, ConfigProbeServiceReplicaNode,
   ConfigProbeServiceScriptNode,
 };
@@ -49,7 +49,7 @@ lazy_static! {
     format!("{}/{}", env!("CARGO_PKG_NAME"), env!("CARGO_PKG_VERSION"));
   pub static ref REPORT_HTTP_HEADER_AUTHORIZATION: String = format!(
     "Basic {}",
-    base64_encoder.encode(&format!(":{}", APP_CONF.report.token))
+    base64_encoder.encode(format!(":{}", APP_CONF.report.token))
   );
 }
 
@@ -73,10 +73,10 @@ pub fn generate_url(path: &str) -> String {
   format!("{}/{}", &APP_CONF.report.endpoint, path)
 }
 
-pub fn status<'a>(
+pub fn status(
   service: &ConfigProbeService,
   node: &ConfigProbeServiceNode,
-  replica: ReportReplica<'a>,
+  replica: ReportReplica<'_>,
   status: &Status,
   interval: u64,
 ) -> Result<(), ()> {
@@ -84,10 +84,10 @@ pub fn status<'a>(
   status_attempt(service, node, replica, status, interval, 0)
 }
 
-fn status_attempt<'a>(
+fn status_attempt(
   service: &ConfigProbeService,
   node: &ConfigProbeServiceNode,
-  replica: ReportReplica<'a>,
+  replica: ReportReplica<'_>,
   status: &Status,
   interval: u64,
   attempt: u8,
@@ -119,10 +119,10 @@ fn status_attempt<'a>(
   }
 }
 
-fn status_request<'a>(
+fn status_request(
   service: &ConfigProbeService,
   node: &ConfigProbeServiceNode,
-  replica: ReportReplica<'a>,
+  replica: ReportReplica<'_>,
   status: &Status,
   interval: u64,
 ) -> Result<(), ()> {

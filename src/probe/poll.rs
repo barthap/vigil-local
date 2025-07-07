@@ -10,7 +10,6 @@ use http_req::{
 };
 use ping::ping;
 
-use std::cmp::min;
 use std::convert::TryFrom;
 use std::net::{SocketAddr, TcpStream, ToSocketAddrs};
 use std::thread;
@@ -20,7 +19,7 @@ use std::time::SystemTime;
 use super::replica::ReplicaURL;
 use super::report::{status as report_status, ReportReplica};
 use super::status::Status;
-use crate::config::config::{
+use crate::config::schema::{
   ConfigProbeService, ConfigProbeServiceNode, ConfigProbeServiceReplicaNode,
 };
 use crate::APP_CONF;
@@ -129,10 +128,10 @@ fn proceed_replica_request(
   let start_time = SystemTime::now();
 
   let (is_up, poll_duration) = match replica.url() {
-    ReplicaURL::ICMP(_, host) => proceed_replica_request_icmp(host),
-    ReplicaURL::TCP(_, host, port) => proceed_replica_request_tcp(host, *port),
-    ReplicaURL::HTTP(_, url) => proceed_replica_request_http(url, node),
-    ReplicaURL::HTTPS(_, url) => proceed_replica_request_http(url, node),
+    ReplicaURL::Icmp(_, host) => proceed_replica_request_icmp(host),
+    ReplicaURL::Tcp(_, host, port) => proceed_replica_request_tcp(host, *port),
+    ReplicaURL::Http(_, url) => proceed_replica_request_http(url, node),
+    ReplicaURL::Https(_, url) => proceed_replica_request_http(url, node),
   };
 
   if is_up {
@@ -291,13 +290,13 @@ fn proceed_replica_request_http(
   // Acquire replica response
   let mut response_body = Vec::new();
 
-  use crate::config::config::HttpMethod as CfgHttpMethod;
+  use crate::config::schema::HttpMethod as CfgHttpMethod;
   let method = match node.http_method {
-    Some(CfgHttpMethod::GET) => Method::GET,
-    Some(CfgHttpMethod::HEAD) => Method::HEAD,
-    Some(CfgHttpMethod::POST) => Method::POST,
-    Some(CfgHttpMethod::PUT) => Method::PUT,
-    Some(CfgHttpMethod::PATCH) => Method::PATCH,
+    Some(CfgHttpMethod::Get) => Method::GET,
+    Some(CfgHttpMethod::Head) => Method::HEAD,
+    Some(CfgHttpMethod::Post) => Method::POST,
+    Some(CfgHttpMethod::Put) => Method::PUT,
+    Some(CfgHttpMethod::Patch) => Method::PATCH,
     None => Method::HEAD,
   };
 

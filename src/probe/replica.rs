@@ -11,11 +11,12 @@ use serde::{Deserialize, Deserializer};
 use url::{Host, Url};
 
 #[derive(Serialize, Debug, Clone)]
+#[serde(rename_all = "UPPERCASE")]
 pub enum ReplicaURL {
-  ICMP(String, String),
-  TCP(String, String, u16),
-  HTTP(String, String),
-  HTTPS(String, String),
+  Icmp(String, String),
+  Tcp(String, String, u16),
+  Http(String, String),
+  Https(String, String),
 }
 
 impl ReplicaURL {
@@ -23,22 +24,22 @@ impl ReplicaURL {
     match Url::parse(raw_url) {
       Ok(url) => match url.scheme() {
         "icmp" => match url.host() {
-          Some(host) => Ok(ReplicaURL::ICMP(
+          Some(host) => Ok(ReplicaURL::Icmp(
             raw_url.to_owned(),
             Self::host_string(host),
           )),
           _ => Err(()),
         },
         "tcp" => match (url.host(), url.port()) {
-          (Some(host), Some(port)) => Ok(ReplicaURL::TCP(
+          (Some(host), Some(port)) => Ok(ReplicaURL::Tcp(
             raw_url.to_owned(),
             Self::host_string(host),
             port,
           )),
           _ => Err(()),
         },
-        "http" => Ok(ReplicaURL::HTTP(raw_url.to_owned(), url.to_string())),
-        "https" => Ok(ReplicaURL::HTTPS(raw_url.to_owned(), url.to_string())),
+        "http" => Ok(ReplicaURL::Http(raw_url.to_owned(), url.to_string())),
+        "https" => Ok(ReplicaURL::Https(raw_url.to_owned(), url.to_string())),
         _ => Err(()),
       },
       _ => Err(()),
@@ -47,10 +48,10 @@ impl ReplicaURL {
 
   pub fn get_raw(&self) -> &str {
     match self {
-      &ReplicaURL::ICMP(ref raw_url, _) => raw_url,
-      &ReplicaURL::TCP(ref raw_url, _, _) => raw_url,
-      &ReplicaURL::HTTP(ref raw_url, _) => raw_url,
-      &ReplicaURL::HTTPS(ref raw_url, _) => raw_url,
+      ReplicaURL::Icmp(raw_url, _) => raw_url,
+      ReplicaURL::Tcp(raw_url, _, _) => raw_url,
+      ReplicaURL::Http(raw_url, _) => raw_url,
+      ReplicaURL::Https(raw_url, _) => raw_url,
     }
   }
 
@@ -75,7 +76,7 @@ impl<'de> Deserialize<'de> for ReplicaURL {
   {
     struct ReplicaURLVisitor;
 
-    impl<'de> Visitor<'de> for ReplicaURLVisitor {
+    impl Visitor<'_> for ReplicaURLVisitor {
       type Value = ReplicaURL;
 
       fn expecting(&self, format: &mut fmt::Formatter) -> fmt::Result {
