@@ -17,14 +17,15 @@ pub fn dispatch(service: &ConfigProbeService, node: &ConfigProbeServiceNode, int
 
             for (index, script) in scripts.iter().enumerate() {
                 let replica_id = index.to_string();
-                let replica_status = proceed_replica(&service.id, &node.id, &replica_id, script);
+                let replica_status =
+                    proceed_replica(&service.id, &node.id, &replica_id, script.script_content());
 
                 debug!("got replica status upon script: {:?}", replica_status);
 
                 match report_status(
-                    &service,
+                    service,
                     node,
-                    ReportReplica::Script(&replica_id),
+                    ReportReplica::new_script(&replica_id, script),
                     &replica_status,
                     interval,
                 ) {

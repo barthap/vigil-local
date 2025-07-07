@@ -19,7 +19,10 @@ use std::time::Duration;
 
 use super::replica::ReplicaURL;
 use super::status::Status;
-use crate::config::config::{ConfigProbeService, ConfigProbeServiceNode};
+use crate::config::config::{
+    ConfigProbeService, ConfigProbeServiceNode, ConfigProbeServiceReplicaNode,
+    ConfigProbeServiceScriptNode,
+};
 use crate::APP_CONF;
 
 pub const REPORT_HTTP_CLIENT_TIMEOUT: Duration = Duration::from_secs(10);
@@ -28,9 +31,16 @@ const RETRY_STATUS_TIMES: u8 = 4;
 const RETRY_STATUS_AFTER_SECONDS: u64 = 2;
 
 #[derive(Debug, Clone, Copy)]
-pub enum ReportReplica<'a> {
+pub enum ReportReplicaData<'a> {
     Poll(&'a ReplicaURL),
     Script(&'a str),
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct ReportReplica<'a> {
+    label: Option<&'a str>,
+    data: ReportReplicaData<'a>,
+    id: &'a str,
 }
 
 #[derive(Serialize)]
@@ -38,6 +48,8 @@ struct ReportPayload<'a> {
     replica: &'a str,
     health: &'a str,
     interval: u64,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    replica_label: Option<&'a str>,
 }
 
 lazy_static! {
@@ -50,6 +62,24 @@ lazy_static! {
 }
 
 impl<'a> ReportReplica<'a> {
+    pub fn new_poll(replica: &'a ConfigProbeServiceReplicaNode) -> ReportReplica<'a> {
+        Self {
+            id: replica.url().get_raw(),
+            data: ReportReplicaData::Poll(replica.url()),
+            label: replica.label(),
+        }
+    }
+
+    pub fn new_script(id: &'a str, replica: &'a ConfigProbeServiceScriptNode) -> ReportReplica<'a> {
+        Self {
+            id,
+            data: ReportReplicaData::Script(replica.script_content()),
+            label: replica.label(),
+        }
+    }
+}
+
+impl<'a> ReportReplicaData<'a> {
     pub fn as_str(&self) -> &str {
         match self {
             Self::Poll(replica) => replica.get_raw(),
@@ -122,9 +152,10 @@ fn status_request<'a>(
 
     // Generate report payload
     let payload = ReportPayload {
-        replica: replica.as_str(),
-        interval: interval,
+        replica: replica.data.as_str(),
+        replica_label: replica.label,
         health: status.as_str(),
+        interval,
     };
 
     // Encode payload to string

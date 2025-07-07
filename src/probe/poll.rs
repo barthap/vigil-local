@@ -20,7 +20,9 @@ use std::time::SystemTime;
 use super::replica::ReplicaURL;
 use super::report::{status as report_status, ReportReplica};
 use super::status::Status;
-use crate::config::config::{ConfigProbeService, ConfigProbeServiceNode};
+use crate::config::config::{
+    ConfigProbeService, ConfigProbeServiceNode, ConfigProbeServiceReplicaNode,
+};
 use crate::APP_CONF;
 
 const NODE_ICMP_TIMEOUT_MILLISECONDS: u64 = 1000;
@@ -51,7 +53,7 @@ pub fn dispatch(service: &ConfigProbeService, node: &ConfigProbeServiceNode, int
                 match report_status(
                     service,
                     node,
-                    ReportReplica::Poll(replica),
+                    ReportReplica::new_poll(replica),
                     &replica_status,
                     interval,
                 ) {
@@ -73,7 +75,7 @@ pub fn dispatch(service: &ConfigProbeService, node: &ConfigProbeServiceNode, int
 pub fn proceed_replica(
     service_id: &str,
     node: &ConfigProbeServiceNode,
-    replica: &ReplicaURL,
+    replica: &ConfigProbeServiceReplicaNode,
 ) -> Status {
     // Attempt to acquire (first attempt)
     proceed_replica_attempt(service_id, node, replica, APP_CONF.metrics.poll_retry, 0)
@@ -82,7 +84,7 @@ pub fn proceed_replica(
 fn proceed_replica_attempt(
     service_id: &str,
     node: &ConfigProbeServiceNode,
-    replica: &ReplicaURL,
+    replica: &ConfigProbeServiceReplicaNode,
     retry_times: u8,
     attempt: u8,
 ) -> Status {
@@ -117,7 +119,7 @@ fn proceed_replica_attempt(
 fn proceed_replica_request(
     service_id: &str,
     node: &ConfigProbeServiceNode,
-    replica: &ReplicaURL,
+    replica: &ConfigProbeServiceReplicaNode,
 ) -> Status {
     debug!(
         "scanning poll replica: #{}:#{}:[{:?}]",
@@ -126,7 +128,7 @@ fn proceed_replica_request(
 
     let start_time = SystemTime::now();
 
-    let (is_up, poll_duration) = match replica {
+    let (is_up, poll_duration) = match replica.url() {
         ReplicaURL::ICMP(_, host) => proceed_replica_request_icmp(host),
         ReplicaURL::TCP(_, host, port) => proceed_replica_request_tcp(host, *port),
         ReplicaURL::HTTP(_, url) => proceed_replica_request_http(url, node),

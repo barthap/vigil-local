@@ -68,7 +68,52 @@ pub enum HttpMethod {
 pub struct ConfigProbeServiceNode {
     pub id: String,
     pub mode: Mode,
-    pub replicas: Option<Vec<ReplicaURL>>,
-    pub scripts: Option<Vec<String>>,
+    pub replicas: Option<Vec<ConfigProbeServiceReplicaNode>>,
+    pub scripts: Option<Vec<ConfigProbeServiceScriptNode>>,
     pub http_method: Option<HttpMethod>,
+}
+
+#[derive(Deserialize, Debug)]
+#[serde(untagged)]
+pub enum ConfigProbeServiceReplicaNode {
+    Extended { url: ReplicaURL, label: String },
+    Simple(ReplicaURL),
+}
+
+#[derive(Deserialize, Debug)]
+#[serde(untagged)]
+pub enum ConfigProbeServiceScriptNode {
+    Extended { script: String, label: String },
+    Simple(String),
+}
+
+impl ConfigProbeServiceReplicaNode {
+    pub fn url(&self) -> &ReplicaURL {
+        match self {
+            Self::Extended { url, .. } => url,
+            Self::Simple(replica_url) => replica_url,
+        }
+    }
+    pub fn label<'a>(&'a self) -> Option<&'a str> {
+        match self {
+            Self::Extended { label, .. } => Some(label),
+            _ => None,
+        }
+    }
+}
+
+impl ConfigProbeServiceScriptNode {
+    pub fn script_content(&self) -> &str {
+        match self {
+            Self::Extended { script, .. } => script,
+            Self::Simple(script) => script,
+        }
+    }
+
+    pub fn label<'a>(&'a self) -> Option<&'a str> {
+        match self {
+            Self::Extended { label, .. } => Some(label),
+            _ => None,
+        }
+    }
 }

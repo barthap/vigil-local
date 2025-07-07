@@ -26,7 +26,7 @@ impl ConfigReader {
         // Replace environment variables
         let environment = env::vars().collect::<HashMap<String, String>>();
 
-        conf = substitute(&conf, &environment).expect("cannot substitute environment variables");
+        // conf = substitute(&conf, &environment).expect("cannot substitute environment variables");
 
         // Parse configuration
         toml::from_str(&conf).expect("syntax error in config file")
