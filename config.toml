@@ -1,7 +1,7 @@
 # Vigil Local
 # Vigil local probe relay
 # Configuration file
-# Example: https://github.com/valeriansaliou/vigil-local/blob/master/config.cfg
+# Example: https://github.com/barthap/vigil-local/blob/master/config.toml
 
 
 [server]

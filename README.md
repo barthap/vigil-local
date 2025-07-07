@@ -31,7 +31,7 @@ Vigil Local lets you monitor nodes that are configured in `local` mode (in Vigil
 
 A pre-built binary of Vigil Local is shared in the releases on GitHub. You can simply download the latest binary version from the [releases page](https://github.com/valeriansaliou/vigil-local/releases), and run it on your server.
 
-You will still need to provide the binary with the configuration file, so make sure you have a Vigil Local `config.cfg` file ready somewhere.
+You will still need to provide the binary with the configuration file, so make sure you have a Vigil Local `config.toml` file ready somewhere.
 
 _The binary provided is statically-linked, which means that it will be able to run on any Linux-based server. Still, it will not work on MacOS or Windows machines._
 
@@ -105,15 +105,15 @@ First, pull the `valeriansaliou/vigil-local` image:
 docker pull valeriansaliou/vigil-local:v1.2.0
 ```
 
-Then, seed it a configuration file and run it (replace `/path/to/your/vigil-local/config.cfg` with the path to your configuration file):
+Then, seed it a configuration file and run it (replace `/path/to/your/vigil-local/config.toml` with the path to your configuration file):
 
 ```bash
-docker run -v /path/to/your/vigil-local/config.cfg:/etc/vigil-local.cfg valeriansaliou/vigil-local:v1.2.0
+docker run -v /path/to/your/vigil-local/config.toml:/etc/vigil-local.cfg valeriansaliou/vigil-local:v1.2.0
 ```
 
 ### Configuration
 
-Use the sample [config.cfg](https://github.com/valeriansaliou/vigil-local/blob/master/config.cfg) configuration file and adjust it to your own environment.
+Use the sample [config.toml](https://github.com/barthap/vigil-local/blob/master/config.toml) configuration file and adjust it to your own environment.
 
 You can also use environment variables with string interpolation in your configuration file, eg. `token = ${VIGIL_TOKEN}`.
 
@@ -152,7 +152,7 @@ You can also use environment variables with string interpolation in your configu
 
 Vigil Local can be run as such:
 
-`./vigil-local -c /path/to/config.cfg`
+`./vigil-local -c /path/to/config.toml`
 
 ## :fire: Report A Vulnerability
 
