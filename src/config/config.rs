@@ -54,10 +54,21 @@ pub struct ConfigProbeService {
     pub node: Vec<ConfigProbeServiceNode>,
 }
 
+#[derive(Deserialize, Default)]
+pub enum HttpMethod {
+    #[default]
+    GET,
+    HEAD,
+    POST,
+    PUT,
+    PATCH,
+}
+
 #[derive(Deserialize)]
 pub struct ConfigProbeServiceNode {
     pub id: String,
     pub mode: Mode,
     pub replicas: Option<Vec<ReplicaURL>>,
     pub scripts: Option<Vec<String>>,
+    pub http_method: Option<HttpMethod>,
 }

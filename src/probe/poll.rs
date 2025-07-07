@@ -40,7 +40,7 @@ pub fn dispatch(service: &ConfigProbeService, node: &ConfigProbeServiceNode, int
             debug!("poll node has replicas in service node: #{}", node.id);
 
             for replica in replicas {
-                let replica_status = proceed_replica(&service.id, &node.id, replica);
+                let replica_status = proceed_replica(&service.id, node, replica);
 
                 if replica_status == Status::Dead {
                     warn!("got replica status upon poll: {:?}", replica_status);
@@ -49,7 +49,7 @@ pub fn dispatch(service: &ConfigProbeService, node: &ConfigProbeServiceNode, int
                 }
 
                 match report_status(
-                    &service,
+                    service,
                     node,
                     ReportReplica::Poll(replica),
                     &replica_status,
@@ -70,24 +70,28 @@ pub fn dispatch(service: &ConfigProbeService, node: &ConfigProbeServiceNode, int
     );
 }
 
-pub fn proceed_replica(service_id: &str, node_id: &str, replica: &ReplicaURL) -> Status {
+pub fn proceed_replica(
+    service_id: &str,
+    node: &ConfigProbeServiceNode,
+    replica: &ReplicaURL,
+) -> Status {
     // Attempt to acquire (first attempt)
-    proceed_replica_attempt(service_id, node_id, replica, APP_CONF.metrics.poll_retry, 0)
+    proceed_replica_attempt(service_id, node, replica, APP_CONF.metrics.poll_retry, 0)
 }
 
 fn proceed_replica_attempt(
     service_id: &str,
-    node_id: &str,
+    node: &ConfigProbeServiceNode,
     replica: &ReplicaURL,
     retry_times: u8,
     attempt: u8,
 ) -> Status {
     info!(
         "running poll replica scan attempt #{} on #{}:#{}:[{:?}]",
-        attempt, service_id, node_id, replica
+        attempt, service_id, &node.id, replica
     );
 
-    match proceed_replica_request(service_id, node_id, replica) {
+    match proceed_replica_request(service_id, node, replica) {
         Status::Healthy => Status::Healthy,
         Status::Sick => Status::Sick,
         Status::Dead => {
@@ -98,34 +102,38 @@ fn proceed_replica_attempt(
             } else {
                 warn!(
                     "poll replica scan attempt #{} failed on #{}:#{}:[{:?}], will retry",
-                    attempt, service_id, node_id, replica
+                    attempt, service_id, &node.id, replica
                 );
 
                 // Retry after delay
                 thread::sleep(Duration::from_millis(RETRY_REPLICA_AFTER_MILLISECONDS));
 
-                proceed_replica_attempt(service_id, node_id, replica, retry_times, next_attempt)
+                proceed_replica_attempt(service_id, node, replica, retry_times, next_attempt)
             }
         }
     }
 }
 
-fn proceed_replica_request(service_id: &str, node_id: &str, replica: &ReplicaURL) -> Status {
+fn proceed_replica_request(
+    service_id: &str,
+    node: &ConfigProbeServiceNode,
+    replica: &ReplicaURL,
+) -> Status {
     debug!(
         "scanning poll replica: #{}:#{}:[{:?}]",
-        service_id, node_id, replica
+        service_id, &node.id, replica
     );
 
     let start_time = SystemTime::now();
 
     let (is_up, poll_duration) = match replica {
-        &ReplicaURL::ICMP(_, ref host) => proceed_replica_request_icmp(host),
-        &ReplicaURL::TCP(_, ref host, port) => proceed_replica_request_tcp(host, port),
-        &ReplicaURL::HTTP(_, ref url) => proceed_replica_request_http(url),
-        &ReplicaURL::HTTPS(_, ref url) => proceed_replica_request_http(url),
+        ReplicaURL::ICMP(_, host) => proceed_replica_request_icmp(host),
+        ReplicaURL::TCP(_, host, port) => proceed_replica_request_tcp(host, *port),
+        ReplicaURL::HTTP(_, url) => proceed_replica_request_http(url, node),
+        ReplicaURL::HTTPS(_, url) => proceed_replica_request_http(url, node),
     };
 
-    if is_up == true {
+    if is_up {
         // Acquire poll duration latency
         let duration_latency = match poll_duration {
             Some(poll_duration) => poll_duration,
@@ -269,7 +277,10 @@ fn proceed_replica_request_tcp(host: &str, port: u16) -> (bool, Option<Duration>
     (false, None)
 }
 
-fn proceed_replica_request_http(url: &str) -> (bool, Option<Duration>) {
+fn proceed_replica_request_http(
+    url: &str,
+    node: &ConfigProbeServiceNode,
+) -> (bool, Option<Duration>) {
     debug!("prober poll will fire for http target: {}", &url);
 
     // Unpack dead timeout
@@ -278,11 +289,21 @@ fn proceed_replica_request_http(url: &str) -> (bool, Option<Duration>) {
     // Acquire replica response
     let mut response_body = Vec::new();
 
+    use crate::config::config::HttpMethod as CfgHttpMethod;
+    let method = match node.http_method {
+        Some(CfgHttpMethod::GET) => Method::GET,
+        Some(CfgHttpMethod::HEAD) => Method::HEAD,
+        Some(CfgHttpMethod::POST) => Method::POST,
+        Some(CfgHttpMethod::PUT) => Method::PUT,
+        Some(CfgHttpMethod::PATCH) => Method::PATCH,
+        None => Method::HEAD,
+    };
+
     let response = Request::new(&Uri::try_from(url).expect("invalid replica request uri"))
         .connect_timeout(Some(dead_timeout))
         .read_timeout(Some(dead_timeout))
         .write_timeout(Some(dead_timeout))
-        .method(Method::HEAD)
+        .method(method)
         .header("User-Agent", &*POLL_HTTP_HEADER_USERAGENT)
         .send(&mut response_body);
 
@@ -296,7 +317,7 @@ fn proceed_replica_request_http(url: &str) -> (bool, Option<Duration>) {
         );
 
         // Consider as UP?
-        if status_code >= HTTP_STATUS_HEALTHY_ABOVE && status_code < HTTP_STATUS_HEALTHY_BELOW {
+        if (HTTP_STATUS_HEALTHY_ABOVE..HTTP_STATUS_HEALTHY_BELOW).contains(&status_code) {
             return (true, None);
         }
     } else {
