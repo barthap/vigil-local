@@ -76,18 +76,33 @@ pub struct ConfigProbeServiceNode {
 #[derive(Deserialize, Debug)]
 #[serde(untagged)]
 pub enum ConfigProbeServiceReplicaNode {
-  Extended { url: ReplicaURL, label: String },
+  Extended {
+    url: ReplicaURL,
+    label: String,
+    id: Option<String>,
+  },
   Simple(ReplicaURL),
 }
 
 #[derive(Deserialize, Debug)]
 #[serde(untagged)]
 pub enum ConfigProbeServiceScriptNode {
-  Extended { script: String, label: String },
+  Extended {
+    script: String,
+    label: String,
+    id: Option<String>,
+  },
   Simple(String),
 }
 
 impl ConfigProbeServiceReplicaNode {
+  pub fn id(&self) -> &str {
+    if let Self::Extended { id: Some(id), .. } = self {
+      return id;
+    }
+    self.url().get_raw()
+  }
+
   pub fn url(&self) -> &ReplicaURL {
     match self {
       Self::Extended { url, .. } => url,
@@ -103,6 +118,13 @@ impl ConfigProbeServiceReplicaNode {
 }
 
 impl ConfigProbeServiceScriptNode {
+  pub fn id(&self) -> Option<&str> {
+    if let Self::Extended { id: Some(id), .. } = self {
+      return Some(id);
+    }
+    None
+  }
+
   pub fn script_content(&self) -> &str {
     match self {
       Self::Extended { script, .. } => script,
